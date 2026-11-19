@@ -1,0 +1,41 @@
+<h2>
+    {{#if isAdmin}}Inscrições{{else}}{{#if isOrganizador}}Inscrições dos meus eventos{{else}}Minhas inscrições{{/if}}{{/if}}
+</h2>
+{{#if podeInscrever}}<a class="btn btn-success mb-3" href="/inscricaoCreate">Nova inscrição</a>{{/if}}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Participante</th>
+            <th>Evento</th>
+            <th>Data do evento</th>
+            <th>Status</th>
+            <th>Presença</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each inscricoes}}
+        <tr>
+            <td>{{usuario.nome}}</td>
+            <td>{{evento.titulo}}</td>
+            <td>{{formatarData evento.data}}</td>
+            <td>
+                {{#if (eq status 'confirmada')}}<span class="badge badge-success">Confirmada</span>
+                {{else}}<span class="badge badge-secondary">Cancelada</span>{{/if}}
+            </td>
+            <td>{{#if presenca}}Presente{{else}}-{{/if}}</td>
+            <td class="acoes">
+                {{#unless ../isParticipante}}
+                <a class="btn btn-sm btn-outline-primary" href="/inscricaoUpdate/{{id}}">Editar</a>
+                {{/unless}}
+                <a class="btn btn-sm btn-outline-danger" href="/inscricaoDelete/{{id}}"
+                    onclick="return confirm('Apagar esta inscrição?')">
+                    {{#if ../isParticipante}}Cancelar inscrição{{else}}Apagar{{/if}}
+                </a>
+            </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="6" class="text-center text-muted">Nenhuma inscrição encontrada.</td></tr>
+        {{/each}}
+    </tbody>
+</table>

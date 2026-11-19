@@ -1,0 +1,26 @@
+<h2>Usuários</h2>
+<a class="btn btn-success mb-3" href="/usuarioCreate">Novo usuário</a>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Login</th>
+            <th>Perfil</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each usuarios}}
+        <tr>
+            <td>{{nome}}</td>
+            <td>{{login}}</td>
+            <td>{{nomePerfil}}</td>
+            <td class="acoes">
+                <a class="btn btn-sm btn-outline-primary" href="/usuarioUpdate/{{id}}">Editar</a>
+                <a class="btn btn-sm btn-outline-danger" href="/usuarioDelete/{{id}}"
+                    onclick="return confirm('Confirmar exclusão?')">Apagar</a>
+            </td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>

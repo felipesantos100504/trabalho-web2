@@ -1,0 +1,20 @@
+<h2>Editar inscrição</h2>
+<p>
+    <strong>Participante:</strong> {{inscricao.usuario.nome}}<br>
+    <strong>Evento:</strong> {{inscricao.evento.titulo}} ({{formatarData inscricao.evento.data}})
+</p>
+<form action="/inscricaoUpdate" method="post">
+    <input type="hidden" name="id" value="{{inscricao.id}}">
+    <div class="form-group">
+        <label for="status">Status</label>
+        <select class="form-control" id="status" name="status">
+            <option value="confirmada" {{#if (eq inscricao.status 'confirmada')}}selected{{/if}}>Confirmada</option>
+            <option value="cancelada" {{#if (eq inscricao.status 'cancelada')}}selected{{/if}}>Cancelada</option>
+        </select>
+    </div>
+    <div class="form-group form-check">
+        <input type="checkbox" class="form-check-input" id="presenca" name="presenca" {{#if inscricao.presenca}}checked{{/if}}>
+        <label class="form-check-label" for="presenca">Participante esteve presente</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Salvar</button>
+</form>

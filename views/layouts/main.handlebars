@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sistema de Eventos Acadêmicos</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="/css/estilo.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <a class="navbar-brand" href="/home">Eventos Acadêmicos</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#menu"
+            aria-controls="menu" aria-expanded="false" aria-label="Abrir menu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="menu">
+            <ul class="navbar-nav mr-auto">
+                {{!-- Renderização condicional: cada item só aparece para os perfis que podem usá-lo --}}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">Eventos</a>
+                    <div class="dropdown-menu">
+                        {{#if podeCriarEvento}}<a class="dropdown-item" href="/eventoCreate">Criar</a>{{/if}}
+                        <a class="dropdown-item" href="/eventoList">Listar</a>
+                    </div>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">Inscrições</a>
+                    <div class="dropdown-menu">
+                        {{#if podeInscrever}}<a class="dropdown-item" href="/inscricaoCreate">Nova inscrição</a>{{/if}}
+                        <a class="dropdown-item" href="/inscricaoList">
+                            {{#if isAdmin}}Todas{{else}}{{#if isOrganizador}}Dos meus eventos{{else}}Minhas inscrições{{/if}}{{/if}}
+                        </a>
+                    </div>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">Categorias</a>
+                    <div class="dropdown-menu">
+                        {{#if isAdmin}}<a class="dropdown-item" href="/categoriaCreate">Criar</a>{{/if}}
+                        <a class="dropdown-item" href="/categoriaList">Listar</a>
+                    </div>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">Locais</a>
+                    <div class="dropdown-menu">
+                        {{#if isAdmin}}<a class="dropdown-item" href="/localCreate">Criar</a>{{/if}}
+                        <a class="dropdown-item" href="/localList">Listar</a>
+                    </div>
+                </li>
+
+                {{#if isAdmin}}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">Usuários</a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="/usuarioCreate">Criar</a>
+                        <a class="dropdown-item" href="/usuarioList">Listar</a>
+                    </div>
+                </li>
+                {{/if}}
+            </ul>
+
+            <span class="navbar-text mr-3">{{login}} ({{nomePerfil}})</span>
+            <a class="btn btn-outline-light btn-sm" href="/logout">Sair</a>
+        </div>
+    </nav>
+
+    <main class="container my-4">
+        {{{body}}}
+    </main>
+</body>
+
+</html>

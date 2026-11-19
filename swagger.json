@@ -1,0 +1,592 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API - Sistema de Eventos Acadêmicos",
+        "description": "API REST do Sistema de Eventos Acadêmicos (Entrega 2 de Programação para Web 2).\n\n## Autenticação\n1. Faça `POST /api/auth/login` com `login` e `senha`.\n2. Copie o `token` da resposta.\n3. Clique em **Authorize** e cole o token. Ele será enviado em todas as requisições no cabeçalho `Authorization: Bearer <token>`.\n\nO token vale **1 hora**. Usuários de teste (criados por `npm run seed`, senha `1234`): `admin`, `organizador`, `participante`.\n\n## Perfis\n| tipo | Perfil | Permissões |\n|---|---|---|\n| 1 | Administrador | Tudo |\n| 2 | Organizador | Cria eventos; altera/apaga só os seus; vê e edita as inscrições dos seus eventos |\n| 3 | Participante | Consulta eventos; inscreve-se em nome próprio; vê e cancela as próprias inscrições |\n\n## Códigos de retorno\n| Código | Quando |\n|---|---|\n| 200 | Sucesso com conteúdo |\n| 201 | Recurso criado (o cabeçalho `Location` aponta para ele) |\n| 204 | Sucesso sem conteúdo (exclusões) |\n| 400 | Dados inválidos ou regra de negócio violada |\n| 401 | Sem token, token inválido/expirado ou login incorreto |\n| 403 | Autenticado, mas o perfil não tem permissão |\n| 404 | Recurso não encontrado |\n| 409 | Conflito: registro duplicado ou em uso por outros registros |\n| 500 | Erro interno no servidor |\n\nTodos os erros têm o formato `{ \"error\": \"mensagem\" }`.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        { "url": "http://localhost:8081/api", "description": "Servidor local" }
+    ],
+    "tags": [
+        { "name": "Autenticação" },
+        { "name": "Usuários", "description": "Somente administrador" },
+        { "name": "Categorias", "description": "Leitura: todos. Escrita: administrador" },
+        { "name": "Locais", "description": "Leitura: todos. Escrita: administrador" },
+        { "name": "Eventos" },
+        { "name": "Inscrições", "description": "Tabela do relacionamento N:N entre usuários (participantes) e eventos" }
+    ],
+    "security": [ { "bearerAuth": [] } ],
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "tags": ["Autenticação"],
+                "summary": "Faz login e devolve um token JWT",
+                "security": [],
+                "requestBody": {
+                    "required": true,
+                    "content": { "application/json": {
+                        "schema": { "$ref": "#/components/schemas/LoginRequest" },
+                        "example": { "login": "admin", "senha": "1234" }
+                    } }
+                },
+                "responses": {
+                    "200": { "description": "Login realizado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginResponse" } } } },
+                    "400": { "$ref": "#/components/responses/BadRequest" },
+                    "401": { "description": "Login ou senha inválidos", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Erro" }, "example": { "error": "Login ou senha inválidos." } } } },
+                    "500": { "$ref": "#/components/responses/ServerError" }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "tags": ["Autenticação"],
+                "summary": "Devolve o usuário dono do token",
+                "responses": {
+                    "200": { "description": "Usuário logado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Usuario" } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            }
+        },
+
+        "/usuarios": {
+            "get": {
+                "tags": ["Usuários"], "summary": "Lista os usuários",
+                "responses": {
+                    "200": { "description": "Lista de usuários (sem senha)", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Usuario" } } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "500": { "$ref": "#/components/responses/ServerError" }
+                }
+            },
+            "post": {
+                "tags": ["Usuários"], "summary": "Cria um usuário",
+                "requestBody": { "required": true, "content": { "application/json": {
+                    "schema": { "$ref": "#/components/schemas/UsuarioInput" },
+                    "example": { "nome": "Pedro Santos", "login": "pedro", "senha": "1234", "tipo": 3 }
+                } } },
+                "responses": {
+                    "201": { "description": "Usuário criado", "headers": { "Location": { "$ref": "#/components/headers/Location" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Usuario" } } } },
+                    "400": { "$ref": "#/components/responses/BadRequest" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "409": { "description": "Login já existe", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Erro" } } } },
+                    "500": { "$ref": "#/components/responses/ServerError" }
+                }
+            }
+        },
+        "/usuarios/{id}": {
+            "parameters": [ { "$ref": "#/components/parameters/Id" } ],
+            "get": {
+                "tags": ["Usuários"], "summary": "Busca um usuário pelo id",
+                "responses": {
+                    "200": { "description": "Usuário encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Usuario" } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            },
+            "put": {
+                "tags": ["Usuários"], "summary": "Atualiza um usuário",
+                "description": "Envie apenas os campos que deseja alterar. Sem `senha`, a senha atual é mantida.",
+                "requestBody": { "required": true, "content": { "application/json": {
+                    "schema": { "$ref": "#/components/schemas/UsuarioUpdate" },
+                    "example": { "nome": "Pedro S. Santos", "tipo": 2 }
+                } } },
+                "responses": {
+                    "200": { "description": "Usuário atualizado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Usuario" } } } },
+                    "400": { "$ref": "#/components/responses/BadRequest" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" },
+                    "409": { "$ref": "#/components/responses/Conflict" }
+                }
+            },
+            "delete": {
+                "tags": ["Usuários"], "summary": "Apaga um usuário",
+                "description": "Não é possível apagar o próprio usuário (400) nem um organizador que ainda tenha eventos (409). As inscrições do usuário são apagadas junto.",
+                "responses": {
+                    "204": { "description": "Usuário apagado" },
+                    "400": { "$ref": "#/components/responses/BadRequest" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" },
+                    "409": { "$ref": "#/components/responses/Conflict" }
+                }
+            }
+        },
+
+        "/categorias": {
+            "get": {
+                "tags": ["Categorias"], "summary": "Lista as categorias",
+                "responses": {
+                    "200": { "description": "Lista de categorias", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Categoria" } } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" }
+                }
+            },
+            "post": {
+                "tags": ["Categorias"], "summary": "Cria uma categoria (admin)",
+                "requestBody": { "required": true, "content": { "application/json": {
+                    "schema": { "$ref": "#/components/schemas/CategoriaInput" }, "example": { "nome": "Hackathon" }
+                } } },
+                "responses": {
+                    "201": { "description": "Categoria criada", "headers": { "Location": { "$ref": "#/components/headers/Location" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Categoria" } } } },
+                    "400": { "$ref": "#/components/responses/BadRequest" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" }
+                }
+            }
+        },
+        "/categorias/{id}": {
+            "parameters": [ { "$ref": "#/components/parameters/Id" } ],
+            "get": {
+                "tags": ["Categorias"], "summary": "Busca uma categoria pelo id",
+                "responses": {
+                    "200": { "description": "Categoria encontrada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Categoria" } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            },
+            "put": {
+                "tags": ["Categorias"], "summary": "Atualiza uma categoria (admin)",
+                "requestBody": { "required": true, "content": { "application/json": {
+                    "schema": { "$ref": "#/components/schemas/CategoriaInput" }, "example": { "nome": "Palestra técnica" }
+                } } },
+                "responses": {
+                    "200": { "description": "Categoria atualizada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Categoria" } } } },
+                    "400": { "$ref": "#/components/responses/BadRequest" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            },
+            "delete": {
+                "tags": ["Categorias"], "summary": "Apaga uma categoria (admin)",
+                "description": "Retorna 409 se ainda houver eventos nesta categoria.",
+                "responses": {
+                    "204": { "description": "Categoria apagada" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" },
+                    "409": { "$ref": "#/components/responses/Conflict" }
+                }
+            }
+        },
+        "/categorias/{id}/eventos": {
+            "parameters": [ { "$ref": "#/components/parameters/Id" } ],
+            "get": {
+                "tags": ["Categorias"], "summary": "Lista os eventos de uma categoria (relacionamento 1:N)",
+                "responses": {
+                    "200": { "description": "Eventos da categoria", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Evento" } } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            }
+        },
+
+        "/locais": {
+            "get": {
+                "tags": ["Locais"], "summary": "Lista os locais",
+                "responses": {
+                    "200": { "description": "Lista de locais", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Local" } } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" }
+                }
+            },
+            "post": {
+                "tags": ["Locais"], "summary": "Cria um local (admin)",
+                "requestBody": { "required": true, "content": { "application/json": {
+                    "schema": { "$ref": "#/components/schemas/LocalInput" }, "example": { "nome": "Sala C-201", "capacidade": 40 }
+                } } },
+                "responses": {
+                    "201": { "description": "Local criado", "headers": { "Location": { "$ref": "#/components/headers/Location" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Local" } } } },
+                    "400": { "$ref": "#/components/responses/BadRequest" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" }
+                }
+            }
+        },
+        "/locais/{id}": {
+            "parameters": [ { "$ref": "#/components/parameters/Id" } ],
+            "get": {
+                "tags": ["Locais"], "summary": "Busca um local pelo id",
+                "responses": {
+                    "200": { "description": "Local encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Local" } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            },
+            "put": {
+                "tags": ["Locais"], "summary": "Atualiza um local (admin)",
+                "requestBody": { "required": true, "content": { "application/json": {
+                    "schema": { "$ref": "#/components/schemas/LocalInput" }, "example": { "capacidade": 50 }
+                } } },
+                "responses": {
+                    "200": { "description": "Local atualizado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Local" } } } },
+                    "400": { "$ref": "#/components/responses/BadRequest" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            },
+            "delete": {
+                "tags": ["Locais"], "summary": "Apaga um local (admin)",
+                "description": "Retorna 409 se ainda houver eventos neste local.",
+                "responses": {
+                    "204": { "description": "Local apagado" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" },
+                    "409": { "$ref": "#/components/responses/Conflict" }
+                }
+            }
+        },
+        "/locais/{id}/eventos": {
+            "parameters": [ { "$ref": "#/components/parameters/Id" } ],
+            "get": {
+                "tags": ["Locais"], "summary": "Lista os eventos de um local (relacionamento 1:N)",
+                "responses": {
+                    "200": { "description": "Eventos do local", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Evento" } } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            }
+        },
+
+        "/eventos": {
+            "get": {
+                "tags": ["Eventos"], "summary": "Lista os eventos (com categoria, local e organizador)",
+                "responses": {
+                    "200": { "description": "Lista de eventos", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/EventoCompleto" } } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" }
+                }
+            },
+            "post": {
+                "tags": ["Eventos"], "summary": "Cria um evento (admin ou organizador)",
+                "description": "Para o **organizador**, o `organizadorId` é sempre ele mesmo (o valor enviado é ignorado). O **admin** deve informar o `organizadorId`.\n\nRegra: `vagas` não pode ser maior que a capacidade do local (400).",
+                "requestBody": { "required": true, "content": { "application/json": {
+                    "schema": { "$ref": "#/components/schemas/EventoInput" },
+                    "example": { "titulo": "Workshop de Git", "descricao": "Versionamento na prática.", "data": "2026-12-12T19:00:00", "vagas": 25, "categoriaId": 3, "localId": 2 }
+                } } },
+                "responses": {
+                    "201": { "description": "Evento criado", "headers": { "Location": { "$ref": "#/components/headers/Location" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Evento" } } } },
+                    "400": { "$ref": "#/components/responses/BadRequest" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "409": { "$ref": "#/components/responses/Conflict" }
+                }
+            }
+        },
+        "/eventos/{id}": {
+            "parameters": [ { "$ref": "#/components/parameters/Id" } ],
+            "get": {
+                "tags": ["Eventos"], "summary": "Busca um evento pelo id (com contagem de inscritos)",
+                "responses": {
+                    "200": { "description": "Evento encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EventoDetalhado" } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            },
+            "put": {
+                "tags": ["Eventos"], "summary": "Atualiza um evento (admin ou organizador dono)",
+                "description": "Envie apenas os campos que deseja alterar. O organizador só altera os eventos que organiza (403) e não pode trocar o organizador.",
+                "requestBody": { "required": true, "content": { "application/json": {
+                    "schema": { "$ref": "#/components/schemas/EventoInput" }, "example": { "vagas": 80, "data": "2026-12-03T19:30:00" }
+                } } },
+                "responses": {
+                    "200": { "description": "Evento atualizado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EventoCompleto" } } } },
+                    "400": { "$ref": "#/components/responses/BadRequest" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" },
+                    "409": { "$ref": "#/components/responses/Conflict" }
+                }
+            },
+            "delete": {
+                "tags": ["Eventos"], "summary": "Apaga um evento (admin ou organizador dono)",
+                "description": "As inscrições do evento são apagadas junto (CASCADE).",
+                "responses": {
+                    "204": { "description": "Evento apagado" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            }
+        },
+        "/eventos/{id}/inscricoes": {
+            "parameters": [ { "$ref": "#/components/parameters/Id" } ],
+            "get": {
+                "tags": ["Eventos"], "summary": "Lista os inscritos de um evento (admin ou organizador dono)",
+                "responses": {
+                    "200": { "description": "Inscrições do evento", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Inscricao" } } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            }
+        },
+
+        "/inscricoes": {
+            "get": {
+                "tags": ["Inscrições"], "summary": "Lista as inscrições visíveis para o perfil",
+                "description": "Admin: todas. Organizador: as dos eventos que ele organiza. Participante: só as próprias.",
+                "responses": {
+                    "200": { "description": "Lista de inscrições", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/InscricaoCompleta" } } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" }
+                }
+            },
+            "post": {
+                "tags": ["Inscrições"], "summary": "Inscreve um participante em um evento (admin ou participante)",
+                "description": "O **participante** é sempre inscrito em nome próprio (basta enviar `eventoId`). O **admin** informa também o `usuarioId` (precisa ser um usuário com perfil Participante).\n\nRegras: evento lotado → 400; inscrição já confirmada → 409; inscrição cancelada anteriormente é reativada.",
+                "requestBody": { "required": true, "content": { "application/json": {
+                    "schema": { "$ref": "#/components/schemas/InscricaoInput" }, "example": { "eventoId": 1 }
+                } } },
+                "responses": {
+                    "201": { "description": "Inscrição criada (ou reativada)", "headers": { "Location": { "$ref": "#/components/headers/Location" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Inscricao" } } } },
+                    "400": { "$ref": "#/components/responses/BadRequest" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" },
+                    "409": { "$ref": "#/components/responses/Conflict" }
+                }
+            }
+        },
+        "/inscricoes/{id}": {
+            "parameters": [ { "$ref": "#/components/parameters/Id" } ],
+            "get": {
+                "tags": ["Inscrições"], "summary": "Busca uma inscrição pelo id",
+                "description": "Admin: qualquer uma. Organizador: dos seus eventos. Participante: só as próprias.",
+                "responses": {
+                    "200": { "description": "Inscrição encontrada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InscricaoCompleta" } } } },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            },
+            "put": {
+                "tags": ["Inscrições"], "summary": "Altera status e/ou presença (admin ou organizador do evento)",
+                "requestBody": { "required": true, "content": { "application/json": {
+                    "schema": { "$ref": "#/components/schemas/InscricaoUpdate" }, "example": { "presenca": true }
+                } } },
+                "responses": {
+                    "200": { "description": "Inscrição atualizada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InscricaoCompleta" } } } },
+                    "400": { "$ref": "#/components/responses/BadRequest" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            },
+            "delete": {
+                "tags": ["Inscrições"], "summary": "Apaga/cancela uma inscrição",
+                "description": "Admin: qualquer uma. Organizador: dos seus eventos. Participante: só as próprias.",
+                "responses": {
+                    "204": { "description": "Inscrição apagada" },
+                    "401": { "$ref": "#/components/responses/Unauthorized" },
+                    "403": { "$ref": "#/components/responses/Forbidden" },
+                    "404": { "$ref": "#/components/responses/NotFound" }
+                }
+            }
+        }
+    },
+
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http", "scheme": "bearer", "bearerFormat": "JWT",
+                "description": "Token obtido em POST /auth/login"
+            }
+        },
+        "parameters": {
+            "Id": { "name": "id", "in": "path", "required": true, "description": "Identificador do recurso", "schema": { "type": "integer", "example": 1 } }
+        },
+        "headers": {
+            "Location": { "description": "URL do recurso criado", "schema": { "type": "string", "example": "/api/eventos/3" } }
+        },
+        "responses": {
+            "BadRequest": { "description": "Dados inválidos ou regra de negócio violada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Erro" }, "example": { "error": "Não há mais vagas neste evento." } } } },
+            "Unauthorized": { "description": "Token ausente, inválido ou expirado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Erro" }, "example": { "error": "Token inválido ou expirado." } } } },
+            "Forbidden": { "description": "O perfil do usuário não tem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Erro" }, "example": { "error": "Acesso negado: seu perfil não tem permissão para esta ação." } } } },
+            "NotFound": { "description": "Recurso não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Erro" }, "example": { "error": "Evento não encontrado." } } } },
+            "Conflict": { "description": "Registro duplicado ou em uso por outros registros", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Erro" }, "example": { "error": "Não é possível concluir: este registro está ligado a outros registros (ex.: eventos)." } } } },
+            "ServerError": { "description": "Erro interno no servidor", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Erro" } } } }
+        },
+        "schemas": {
+            "Erro": {
+                "type": "object",
+                "properties": { "error": { "type": "string" } }
+            },
+            "LoginRequest": {
+                "type": "object", "required": ["login", "senha"],
+                "properties": { "login": { "type": "string" }, "senha": { "type": "string", "format": "password" } }
+            },
+            "LoginResponse": {
+                "type": "object",
+                "properties": {
+                    "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+                    "expiresIn": { "type": "integer", "description": "Validade em segundos", "example": 3600 },
+                    "usuario": {
+                        "type": "object",
+                        "properties": {
+                            "id": { "type": "integer", "example": 1 },
+                            "nome": { "type": "string", "example": "Administrador" },
+                            "login": { "type": "string", "example": "admin" },
+                            "tipo": { "type": "integer", "example": 1 }
+                        }
+                    }
+                }
+            },
+            "Usuario": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "integer", "example": 4 },
+                    "nome": { "type": "string", "example": "João Pereira" },
+                    "login": { "type": "string", "example": "participante" },
+                    "tipo": { "type": "integer", "enum": [1, 2, 3], "description": "1 Administrador, 2 Organizador, 3 Participante", "example": 3 },
+                    "createdAt": { "type": "string", "format": "date-time" },
+                    "updatedAt": { "type": "string", "format": "date-time" }
+                }
+            },
+            "UsuarioInput": {
+                "type": "object", "required": ["nome", "login", "senha", "tipo"],
+                "properties": {
+                    "nome": { "type": "string" },
+                    "login": { "type": "string", "description": "Único" },
+                    "senha": { "type": "string", "format": "password", "description": "Guardada como hash bcrypt" },
+                    "tipo": { "type": "integer", "enum": [1, 2, 3] }
+                }
+            },
+            "UsuarioUpdate": {
+                "type": "object",
+                "properties": {
+                    "nome": { "type": "string" },
+                    "login": { "type": "string" },
+                    "senha": { "type": "string", "format": "password", "description": "Opcional: sem ela, a senha atual é mantida" },
+                    "tipo": { "type": "integer", "enum": [1, 2, 3] }
+                }
+            },
+            "Categoria": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "integer", "example": 1 },
+                    "nome": { "type": "string", "example": "Palestra" },
+                    "createdAt": { "type": "string", "format": "date-time" },
+                    "updatedAt": { "type": "string", "format": "date-time" }
+                }
+            },
+            "CategoriaInput": {
+                "type": "object", "required": ["nome"],
+                "properties": { "nome": { "type": "string" } }
+            },
+            "Local": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "integer", "example": 1 },
+                    "nome": { "type": "string", "example": "Auditório B" },
+                    "capacidade": { "type": "integer", "example": 120 },
+                    "createdAt": { "type": "string", "format": "date-time" },
+                    "updatedAt": { "type": "string", "format": "date-time" }
+                }
+            },
+            "LocalInput": {
+                "type": "object", "required": ["nome", "capacidade"],
+                "properties": { "nome": { "type": "string" }, "capacidade": { "type": "integer", "minimum": 1 } }
+            },
+            "Evento": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "integer", "example": 1 },
+                    "titulo": { "type": "string", "example": "Introdução ao Node.js" },
+                    "descricao": { "type": "string", "example": "Palestra sobre os fundamentos do Node.js e do NPM." },
+                    "data": { "type": "string", "format": "date-time" },
+                    "vagas": { "type": "integer", "example": 100 },
+                    "categoriaId": { "type": "integer", "example": 1 },
+                    "localId": { "type": "integer", "example": 1 },
+                    "organizadorId": { "type": "integer", "example": 2 },
+                    "createdAt": { "type": "string", "format": "date-time" },
+                    "updatedAt": { "type": "string", "format": "date-time" }
+                }
+            },
+            "EventoCompleto": {
+                "allOf": [
+                    { "$ref": "#/components/schemas/Evento" },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "categoria": { "$ref": "#/components/schemas/Categoria" },
+                            "local": { "$ref": "#/components/schemas/Local" },
+                            "organizador": { "type": "object", "properties": { "id": { "type": "integer" }, "nome": { "type": "string" } } }
+                        }
+                    }
+                ]
+            },
+            "EventoDetalhado": {
+                "allOf": [
+                    { "$ref": "#/components/schemas/EventoCompleto" },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "inscritos": { "type": "integer", "description": "Inscrições confirmadas", "example": 2 },
+                            "vagasRestantes": { "type": "integer", "example": 98 }
+                        }
+                    }
+                ]
+            },
+            "EventoInput": {
+                "type": "object", "required": ["titulo", "descricao", "data", "vagas", "categoriaId", "localId"],
+                "properties": {
+                    "titulo": { "type": "string" },
+                    "descricao": { "type": "string" },
+                    "data": { "type": "string", "format": "date-time" },
+                    "vagas": { "type": "integer", "minimum": 1, "description": "Não pode ser maior que a capacidade do local" },
+                    "categoriaId": { "type": "integer" },
+                    "localId": { "type": "integer" },
+                    "organizadorId": { "type": "integer", "description": "Só é considerado quando quem envia é o administrador" }
+                }
+            },
+            "Inscricao": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "integer", "example": 1 },
+                    "usuarioId": { "type": "integer", "example": 4 },
+                    "eventoId": { "type": "integer", "example": 1 },
+                    "status": { "type": "string", "enum": ["confirmada", "cancelada"], "example": "confirmada" },
+                    "presenca": { "type": "boolean", "example": false },
+                    "createdAt": { "type": "string", "format": "date-time" },
+                    "updatedAt": { "type": "string", "format": "date-time" }
+                }
+            },
+            "InscricaoCompleta": {
+                "allOf": [
+                    { "$ref": "#/components/schemas/Inscricao" },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "usuario": { "type": "object", "properties": { "id": { "type": "integer" }, "nome": { "type": "string" } } },
+                            "evento": {
+                                "type": "object",
+                                "properties": {
+                                    "id": { "type": "integer" }, "titulo": { "type": "string" },
+                                    "data": { "type": "string", "format": "date-time" }, "organizadorId": { "type": "integer" }
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "InscricaoInput": {
+                "type": "object", "required": ["eventoId"],
+                "properties": {
+                    "eventoId": { "type": "integer" },
+                    "usuarioId": { "type": "integer", "description": "Obrigatório para o administrador; ignorado para o participante" }
+                }
+            },
+            "InscricaoUpdate": {
+                "type": "object",
+                "properties": {
+                    "status": { "type": "string", "enum": ["confirmada", "cancelada"] },
+                    "presenca": { "type": "boolean" }
+                }
+            }
+        }
+    }
+}

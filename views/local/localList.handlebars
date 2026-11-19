@@ -1,0 +1,26 @@
+<h2>Locais</h2>
+{{#if isAdmin}}<a class="btn btn-success mb-3" href="/localCreate">Novo local</a>{{/if}}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Capacidade</th>
+            {{#if isAdmin}}<th>Ações</th>{{/if}}
+        </tr>
+    </thead>
+    <tbody>
+        {{#each locais}}
+        <tr>
+            <td>{{nome}}</td>
+            <td>{{capacidade}}</td>
+            {{#if ../isAdmin}}
+            <td class="acoes">
+                <a class="btn btn-sm btn-outline-primary" href="/localUpdate/{{id}}">Editar</a>
+                <a class="btn btn-sm btn-outline-danger" href="/localDelete/{{id}}"
+                    onclick="return confirm('Confirmar exclusão?')">Apagar</a>
+            </td>
+            {{/if}}
+        </tr>
+        {{/each}}
+    </tbody>
+</table>

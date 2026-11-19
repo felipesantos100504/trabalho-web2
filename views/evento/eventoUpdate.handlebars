@@ -1,0 +1,51 @@
+<h2>Editar evento</h2>
+<form action="/eventoUpdate" method="post">
+    <input type="hidden" name="id" value="{{evento.id}}">
+    <div class="form-group">
+        <label for="titulo">Título</label>
+        <input type="text" class="form-control" id="titulo" name="titulo" value="{{evento.titulo}}" required>
+    </div>
+    <div class="form-group">
+        <label for="descricao">Descrição</label>
+        <textarea class="form-control" id="descricao" name="descricao" rows="3" required>{{evento.descricao}}</textarea>
+    </div>
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label for="data">Data e hora</label>
+            <input type="datetime-local" class="form-control" id="data" name="data" value="{{dataInput evento.data}}" required>
+        </div>
+        <div class="form-group col-md-6">
+            <label for="vagas">Vagas</label>
+            <input type="number" class="form-control" id="vagas" name="vagas" min="1" value="{{evento.vagas}}" required>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label for="categoriaId">Categoria</label>
+            <select class="form-control" id="categoriaId" name="categoriaId">
+                {{#each categorias}}
+                <option value="{{id}}" {{#if (eq id ../evento.categoriaId)}}selected{{/if}}>{{nome}}</option>
+                {{/each}}
+            </select>
+        </div>
+        <div class="form-group col-md-6">
+            <label for="localId">Local</label>
+            <select class="form-control" id="localId" name="localId">
+                {{#each locais}}
+                <option value="{{id}}" {{#if (eq id ../evento.localId)}}selected{{/if}}>{{nome}} ({{capacidade}} lugares)</option>
+                {{/each}}
+            </select>
+        </div>
+    </div>
+    {{#if isAdmin}}
+    <div class="form-group">
+        <label for="organizadorId">Organizador</label>
+        <select class="form-control" id="organizadorId" name="organizadorId">
+            {{#each organizadores}}
+            <option value="{{id}}" {{#if (eq id ../evento.organizadorId)}}selected{{/if}}>{{nome}}</option>
+            {{/each}}
+        </select>
+    </div>
+    {{/if}}
+    <button type="submit" class="btn btn-primary">Salvar</button>
+</form>

@@ -1,0 +1,23 @@
+{
+  "name": "trabalho-eventos",
+  "version": "1.0.0",
+  "description": "Sistema de Eventos Acadêmicos - Trabalho de Programação para Web 2 (Entrega 1 - MVC)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "seed": "node seed.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.18.2",
+    "express-handlebars": "^7.1.2",
+    "express-session": "^1.17.3",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.11.3",
+    "sequelize": "^6.32.1",
+    "swagger-ui-express": "^5.0.1"
+  }
+}

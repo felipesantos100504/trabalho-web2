@@ -1,0 +1,24 @@
+<h2>Olá, {{login}}!</h2>
+<p class="lead">Você entrou como <strong>{{nomePerfil}}</strong>.</p>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">O que você pode fazer</h5>
+        <ul class="mb-0">
+            {{#if isAdmin}}
+            <li>Gerenciar usuários, categorias, locais, eventos e inscrições de todo o sistema.</li>
+            {{/if}}
+            {{#if isOrganizador}}
+            <li>Criar eventos e editar ou apagar os eventos que você organiza.</li>
+            <li>Ver as inscrições dos seus eventos, marcar presença e cancelar inscrições.</li>
+            {{/if}}
+            {{#if isParticipante}}
+            <li>Ver os eventos e se inscrever nos que tiverem vaga.</li>
+            <li>Acompanhar e cancelar as suas inscrições.</li>
+            {{/if}}
+            <li>Consultar eventos, categorias e locais.</li>
+        </ul>
+    </div>
+</div>
+
+<a class="btn btn-primary mt-3" href="/eventoList">Ver eventos</a>

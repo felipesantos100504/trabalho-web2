@@ -1,0 +1,15 @@
+.caixa-login {
+    max-width: 380px;
+    margin: 0 auto;
+}
+
+.table td,
+.table th {
+    vertical-align: middle;
+}
+
+.acoes a,
+.acoes form {
+    display: inline-block;
+    margin-right: 4px;
+}

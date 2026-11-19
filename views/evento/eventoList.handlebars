@@ -1,0 +1,52 @@
+<h2>Eventos</h2>
+{{#if podeCriarEvento}}<a class="btn btn-success mb-3" href="/eventoCreate">Novo evento</a>{{/if}}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Título</th>
+            <th>Data</th>
+            <th>Categoria</th>
+            <th>Local</th>
+            <th>Organizador</th>
+            <th>Vagas</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each eventos}}
+        <tr>
+            <td>
+                <strong>{{titulo}}</strong><br>
+                <small class="text-muted">{{descricao}}</small>
+            </td>
+            <td>{{formatarData data}}</td>
+            {{!-- categoria, local e organizador vieram do include (JOIN) feito no controller --}}
+            <td>{{categoria.nome}}</td>
+            <td>{{local.nome}}</td>
+            <td>{{organizador.nome}}</td>
+            <td>{{inscritos}}/{{vagas}}</td>
+            <td class="acoes">
+                {{#if ../isParticipante}}
+                    {{#if jaInscrito}}
+                    <span class="badge badge-success">Inscrito</span>
+                    {{else if vagasRestantes}}
+                    <form action="/inscricaoCreate" method="post">
+                        <input type="hidden" name="eventoId" value="{{id}}">
+                        <button type="submit" class="btn btn-sm btn-primary">Inscrever-se</button>
+                    </form>
+                    {{else}}
+                    <span class="badge badge-secondary">Lotado</span>
+                    {{/if}}
+                {{/if}}
+                {{#if podeEditar}}
+                <a class="btn btn-sm btn-outline-primary" href="/eventoUpdate/{{id}}">Editar</a>
+                <a class="btn btn-sm btn-outline-danger" href="/eventoDelete/{{id}}"
+                    onclick="return confirm('Apagar este evento e todas as suas inscrições?')">Apagar</a>
+                {{/if}}
+            </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="7" class="text-center text-muted">Nenhum evento cadastrado.</td></tr>
+        {{/each}}
+    </tbody>
+</table>

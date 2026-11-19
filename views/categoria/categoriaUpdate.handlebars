@@ -1,0 +1,9 @@
+<h2>Editar categoria</h2>
+<form action="/categoriaUpdate" method="post">
+    <input type="hidden" name="id" value="{{categoria.id}}">
+    <div class="form-group">
+        <label for="nome">Nome</label>
+        <input type="text" class="form-control" id="nome" name="nome" value="{{categoria.nome}}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Salvar</button>
+</form>

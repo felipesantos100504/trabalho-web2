@@ -1,0 +1,25 @@
+<h2>Categorias</h2>
+{{#if isAdmin}}<a class="btn btn-success mb-3" href="/categoriaCreate">Nova categoria</a>{{/if}}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nome</th>
+            {{#if isAdmin}}<th>Ações</th>{{/if}}
+        </tr>
+    </thead>
+    <tbody>
+        {{#each categorias}}
+        <tr>
+            <td>{{nome}}</td>
+            {{!-- ../ sobe um nível: dentro do #each o contexto é a categoria, e isAdmin está no contexto da página --}}
+            {{#if ../isAdmin}}
+            <td class="acoes">
+                <a class="btn btn-sm btn-outline-primary" href="/categoriaUpdate/{{id}}">Editar</a>
+                <a class="btn btn-sm btn-outline-danger" href="/categoriaDelete/{{id}}"
+                    onclick="return confirm('Confirmar exclusão?')">Apagar</a>
+            </td>
+            {{/if}}
+        </tr>
+        {{/each}}
+    </tbody>
+</table>

@@ -1,0 +1,19 @@
+<h2>Nova inscrição</h2>
+<form action="/inscricaoCreate" method="post">
+    {{!-- Só o admin escolhe quem será inscrito; o participante é inscrito em nome próprio (middleware fixarDono) --}}
+    {{#if isAdmin}}
+    <div class="form-group">
+        <label for="usuarioId">Participante</label>
+        <select class="form-control" id="usuarioId" name="usuarioId">
+            {{#each participantes}}<option value="{{id}}">{{nome}}</option>{{/each}}
+        </select>
+    </div>
+    {{/if}}
+    <div class="form-group">
+        <label for="eventoId">Evento</label>
+        <select class="form-control" id="eventoId" name="eventoId">
+            {{#each eventos}}<option value="{{id}}">{{titulo}} ({{formatarData data}})</option>{{/each}}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Inscrever</button>
+</form>
