@@ -78,8 +78,7 @@ module.exports = {
     },
     async getDelete(req, res) {
         try {
-            if (req.params.id == req.session.usuarioId)
-                return res.status(400).render('erro', { mensagem: 'Você não pode apagar o seu próprio usuário.' });
+            // o middleware impedirAutoExclusao já barrou a tentativa de apagar o próprio usuário
             await db.Usuario.destroy({ where: { id: req.params.id } });
             res.redirect('/usuarioList');
         } catch (err) {

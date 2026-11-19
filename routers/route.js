@@ -6,7 +6,7 @@ const controllerEvento = require('../controllers/controllerEvento');
 const controllerInscricao = require('../controllers/controllerInscricao');
 const {
     ADMIN, ORGANIZADOR, PARTICIPANTE,
-    checkRole, fixarDono, checkEventoOwner, checkInscricaoAccess, filtroInscricoes
+    checkRole, fixarDono, checkEventoOwner, checkInscricaoAccess, filtroInscricoes, impedirAutoExclusao
 } = require('../middlewares/middlewares');
 
 const route = express.Router();
@@ -31,7 +31,7 @@ route.post('/usuarioCreate', soAdmin, controllerUsuario.postCreate);
 route.get('/usuarioList', soAdmin, controllerUsuario.getList);
 route.get('/usuarioUpdate/:id', soAdmin, controllerUsuario.getUpdate);
 route.post('/usuarioUpdate', soAdmin, controllerUsuario.postUpdate);
-route.get('/usuarioDelete/:id', soAdmin, controllerUsuario.getDelete);
+route.get('/usuarioDelete/:id', soAdmin, impedirAutoExclusao, controllerUsuario.getDelete);
 
 // ==================== CATEGORIA (todos listam, só admin altera) ====================
 route.get('/categoriaCreate', soAdmin, controllerCategoria.getCreate);

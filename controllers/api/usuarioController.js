@@ -55,8 +55,7 @@ module.exports = {
     // DELETE /api/usuarios/:id
     async deleteUsuario(req, res) {
         try {
-            if (req.params.id == req.user.id)
-                return res.status(400).json({ error: 'Você não pode apagar o seu próprio usuário.' });
+            // o middleware impedirAutoExclusao já barrou a tentativa de apagar o próprio usuário
             const apagados = await db.Usuario.destroy({ where: { id: req.params.id } });
             if (!apagados) return res.status(404).json({ error: 'Usuário não encontrado.' });
             res.status(204).send();  // 204 = deu certo e não há conteúdo para devolver

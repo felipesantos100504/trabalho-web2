@@ -105,7 +105,7 @@
             },
             "delete": {
                 "tags": ["Usuários"], "summary": "Apaga um usuário",
-                "description": "Não é possível apagar o próprio usuário (400) nem um organizador que ainda tenha eventos (409). As inscrições do usuário são apagadas junto.",
+                "description": "Não é possível apagar o próprio usuário (403, middleware impedirAutoExclusao) nem um organizador que ainda tenha eventos (409). As inscrições do usuário são apagadas junto.",
                 "responses": {
                     "204": { "description": "Usuário apagado" },
                     "400": { "$ref": "#/components/responses/BadRequest" },

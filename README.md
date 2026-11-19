@@ -98,6 +98,7 @@ Usuario >──< Evento   (tabela intermediária: Inscricao, com status e presen
 | `checkEventoOwner` | Organizador só altera os eventos que ele organiza |
 | `checkInscricaoAccess` | Organizador só mexe nas inscrições dos seus eventos; participante só nas próprias |
 | `filtroInscricoes` | Monta o filtro da listagem de inscrições conforme o perfil (o controller só aplica) |
+| `impedirAutoExclusao` | Ninguém apaga o próprio usuário (403) |
 
 As views escondem os botões que o perfil não pode usar (`{{#if isAdmin}}`…), mas a proteção de verdade está nos middlewares das rotas: acessar a URL diretamente devolve 403.
 
@@ -106,7 +107,7 @@ As views escondem os botões que o perfil não pode usar (`{{#if isAdmin}}`…),
 - Um evento não pode ter mais vagas do que a capacidade do local.
 - Não é possível se inscrever em um evento lotado (contam só as inscrições confirmadas).
 - O mesmo participante não se inscreve duas vezes no mesmo evento; se a inscrição antiga estiver cancelada, ela é reativada.
-- O admin não pode apagar o próprio usuário.
+- O admin não pode apagar o próprio usuário (verificado pelo middleware `impedirAutoExclusao`).
 
 ## Fluxo de uma requisição (exemplo: organizador edita um evento)
 
@@ -133,7 +134,7 @@ O token é assinado com `JWT_SECRET` (do `.env`), vale 1 hora e carrega `{ id, l
 
 **Autenticação x autorização:**
 - *Autenticação* é saber **quem** é o usuário. No site isso vem da sessão (`sessionControl`) e na API do token (`authenticateToken`).
-- *Autorização* é saber **o que** ele pode fazer. Os **mesmos** middlewares (`checkRole`, `fixarDono`, `checkEventoOwner`, `checkInscricaoAccess`, `filtroInscricoes`) protegem o site e a API. A função `usuarioLogado(req)` lê o usuário de `req.user` (API) ou de `req.session` (site).
+- *Autorização* é saber **o que** ele pode fazer. Os **mesmos** middlewares (`checkRole`, `fixarDono`, `checkEventoOwner`, `checkInscricaoAccess`, `filtroInscricoes`, `impedirAutoExclusao`) protegem o site e a API. A função `usuarioLogado(req)` lê o usuário de `req.user` (API) ou de `req.session` (site).
 
 ## Rotas
 

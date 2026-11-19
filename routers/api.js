@@ -8,7 +8,7 @@ const express = require('express');
 const authenticateToken = require('../middlewares/authenticateToken');
 const {
     ADMIN, ORGANIZADOR, PARTICIPANTE,
-    checkRole, fixarDono, checkEventoOwner, checkInscricaoAccess, filtroInscricoes
+    checkRole, fixarDono, checkEventoOwner, checkInscricaoAccess, filtroInscricoes, impedirAutoExclusao
 } = require('../middlewares/middlewares');  // os MESMOS middlewares de permissão do site
 
 const authController = require('../controllers/api/authController');
@@ -36,7 +36,7 @@ router.get('/usuarios', soAdmin, usuarioController.getUsuarios);
 router.post('/usuarios', soAdmin, usuarioController.postUsuario);
 router.get('/usuarios/:id', soAdmin, usuarioController.getUsuarioById);
 router.put('/usuarios/:id', soAdmin, usuarioController.putUsuario);
-router.delete('/usuarios/:id', soAdmin, usuarioController.deleteUsuario);
+router.delete('/usuarios/:id', soAdmin, impedirAutoExclusao, usuarioController.deleteUsuario);
 
 // ==================== CATEGORIAS (todos leem, só admin altera) ====================
 router.get('/categorias', todos, categoriaController.getCategorias);

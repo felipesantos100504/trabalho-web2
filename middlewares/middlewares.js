@@ -111,5 +111,13 @@ module.exports = {
         else if (usuario.tipo == ORGANIZADOR) req.filtroInscricoes = { '$evento.organizadorId$': usuario.id };
         else req.filtroInscricoes = { usuarioId: usuario.id };
         next();
+    },
+
+    // AUTORIZAÇÃO SOBRE UM USUÁRIO: ninguém apaga o próprio usuário
+    // (assim o sistema nunca fica sem o administrador que está logado).
+    impedirAutoExclusao(req, res, next) {
+        if (req.params.id == usuarioLogado(req).id)
+            return negarAcesso(res, 'Você não pode apagar o seu próprio usuário.');
+        next();
     }
 };
