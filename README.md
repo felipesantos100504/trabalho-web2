@@ -9,10 +9,57 @@ Stack (a mesma das aulas): Node.js, Express, Express-Handlebars, Express-Session
 
 ## Como rodar
 
-1. Copie `.env.example` para `.env` e preencha os dados do seu PostgreSQL.
-2. Instale as dependências: `npm install`
-3. Crie o banco, as tabelas e os dados de exemplo (**apaga tudo o que existir**): `npm run seed`
-4. Suba o servidor: `npm start` e acesse http://localhost:8081
+### Pré-requisitos
+
+- **Node.js 20.12 ou mais novo** (o projeto usa `process.loadEnvFile()`, que não existe em versões anteriores). Confira com `node -v`.
+- **PostgreSQL** instalado e rodando, e a senha do usuário `postgres` (a que você definiu na instalação).
+- **Git**, para baixar o projeto.
+
+### Passo a passo
+
+1. **Baixe o projeto** e entre na pasta:
+   ```
+   git clone https://github.com/felipesantos100504/trabalho-web2.git
+   cd trabalho-web2
+   ```
+2. **Crie o arquivo `.env`** copiando o modelo:
+   ```
+   copy .env.example .env      (Windows, no cmd)
+   Copy-Item .env.example .env (Windows, no PowerShell)
+   cp .env.example .env        (Linux/Mac)
+   ```
+   Depois abra o `.env` e preencha (veja a tabela abaixo). Ele **não vai para o GitHub**: cada um tem o seu.
+3. **Instale as dependências:** `npm install`
+4. **Crie o banco, as tabelas e os dados de exemplo:** `npm run seed`
+   (**apaga tudo o que existir** nas tabelas; rode de novo sempre que quiser voltar aos dados iniciais)
+5. **Suba o servidor:** `npm start`. Quando aparecer `Servidor no http://localhost:8081`, acesse:
+   - Site: http://localhost:8081
+   - Documentação da API (Swagger): http://localhost:8081/api-docs
+6. Para parar o servidor: `Ctrl + C` no terminal.
+
+### Variáveis do `.env`
+
+| Variável | O que colocar |
+|---|---|
+| `PG_DATABASE` | Nome do banco. Pode deixar `eventos_db`; o seed cria o banco se ele não existir |
+| `PG_USER` | Usuário do PostgreSQL (normalmente `postgres`) |
+| `PG_PASSWORD` | Senha desse usuário |
+| `PG_HOST` | `localhost` quando o PostgreSQL está no seu computador |
+| `SESSION_SECRET` | Qualquer texto longo e aleatório (assina o cookie da sessão do site) |
+| `JWT_SECRET` | Outro texto longo e aleatório (assina os tokens da API) |
+
+Para gerar um texto aleatório: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+
+### Problemas comuns
+
+| Mensagem | Causa e solução |
+|---|---|
+| `password authentication failed for user "postgres"` | Senha errada no `PG_PASSWORD` do `.env` |
+| `connect ECONNREFUSED 127.0.0.1:5432` | O PostgreSQL não está rodando. No Windows, inicie o serviço `postgresql-x64-NN` em "Serviços" |
+| `process.loadEnvFile is not a function` | Node antigo. Instale a versão LTS em https://nodejs.org |
+| `ENOENT: no such file or directory, open '.env'` | Faltou criar o `.env` (passo 2) |
+| `EADDRINUSE: address already in use :::8081` | O servidor já está rodando em outro terminal. Feche-o com `Ctrl + C` |
+| `relation "usuarios" does not exist` | Faltou rodar `npm run seed` (passo 4) |
 
 Usuários criados pelo seed (senha `1234` para todos):
 
